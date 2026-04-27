@@ -195,7 +195,7 @@ function resize(){
 resize();
 window.addEventListener('resize', resize);
 
-/* ⭐ звезды (3D) */
+/* ⭐ звезды */
 let stars = [];
 for (let i = 0; i < 150; i++) {
   stars.push({
@@ -206,7 +206,7 @@ for (let i = 0; i < 150; i++) {
   });
 }
 
-/* мышь */
+/* 🎯 управление */
 let mouse = { x: 0, y: 0 };
 
 window.addEventListener('mousemove', e => {
@@ -214,14 +214,36 @@ window.addEventListener('mousemove', e => {
   mouse.y = (e.clientY / h - 0.5);
 });
 
-window.addEventListener('deviceorientation', e => {
-  if (e.gamma && e.beta) {
-    mouse.x = e.gamma / 30;
-    mouse.y = e.beta / 30;
-  }
-});
+/* 📱 гироскоп с разрешением */
+function enableGyro() {
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
 
-/* кометы */
+    DeviceOrientationEvent.requestPermission()
+      .then(permissionState => {
+        if (permissionState === 'granted') {
+          startGyro();
+        }
+      });
+
+  } else {
+    startGyro();
+  }
+}
+
+function startGyro(){
+  window.addEventListener('deviceorientation', e => {
+    if (e.gamma && e.beta) {
+      mouse.x = e.gamma / 30;
+      mouse.y = e.beta / 30;
+    }
+  });
+}
+
+window.addEventListener('click', enableGyro, { once: true });
+window.addEventListener('touchstart', enableGyro, { once: true });
+
+/* ☄️ кометы */
 let comets = [];
 let explosions = [];
 
@@ -239,7 +261,7 @@ function createComet(){
   });
 }
 
-/* взрыв */
+/* 💥 взрыв */
 function explode(x, y) {
   const particles = [];
 
@@ -259,7 +281,7 @@ function explode(x, y) {
   explosions.push({ particles });
 }
 
-/* клик */
+/* 🎯 клик */
 function handleClick(x, y){
   comets.forEach(c=>{
     const dist = Math.hypot(x - c.x, y - c.y);
@@ -280,7 +302,7 @@ window.addEventListener('touchstart', e=>{
   handleClick(t.clientX, t.clientY);
 });
 
-/* сцена */
+/* 🎬 сцена */
 function openScene(){
   document.getElementById('fade').classList.add('active');
   setTimeout(()=>{
@@ -295,11 +317,11 @@ function closeScene(){
   },300);
 }
 
-/* draw */
+/* 🎨 draw */
 function draw(){
   ctx.clearRect(0,0,w,h);
 
-  // звезды
+  // ⭐ параллакс
   stars.forEach(s=>{
     const ox = mouse.x * s.depth * 10;
     const oy = mouse.y * s.depth * 10;
@@ -310,7 +332,7 @@ function draw(){
     ctx.fill();
   });
 
-  // кометы
+  // ☄️ кометы
   comets.forEach((c,i)=>{
     ctx.shadowBlur = 20;
     ctx.shadowColor = "white";
@@ -345,7 +367,7 @@ function draw(){
     if(c.y > h+100) comets.splice(i,1);
   });
 
-  // взрывы
+  // 💥 взрывы
   explosions.forEach((exp, ei)=>{
     exp.particles.forEach((p, pi)=>{
       ctx.globalAlpha = p.life;
