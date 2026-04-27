@@ -115,6 +115,24 @@ h1.main {
   left:20px;
   cursor:pointer;
 }
+
+/* карточки */
+.cards {
+  max-width:1000px;
+  margin:80px auto 0;
+  display:flex;
+  gap:30px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+
+.card {
+  background:white;
+  padding:25px;
+  border-radius:20px;
+  width:260px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.15);
+}
 </style>
 </head>
 
@@ -148,7 +166,25 @@ h1.main {
 
 <div class="scene2" id="scene2">
   <div class="back" onclick="closeScene()">← назад</div>
-  <h2 style="text-align:center;">Добро пожаловать 💫</h2>
+
+  <div class="cards">
+    <div class="card">
+      <h2>Дата свадьбы</h2>
+      <p>17 июля 2027</p>
+    </div>
+
+    <div class="card">
+      <h2>План мероприятия</h2>
+      <p>15:30 — сбор гостей</p>
+      <p>16:00 — церемония</p>
+      <p>18:30 — банкет</p>
+    </div>
+
+    <div class="card">
+      <h2>Место</h2>
+      <p>Моринское агроусадьба</p>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -163,7 +199,7 @@ function resize(){
 resize();
 window.addEventListener('resize', resize);
 
-/* ⭐ ЗВЁЗДЫ С МЕРЦАНИЕМ */
+/* ⭐ звезды */
 let stars=[];
 for(let i=0;i<120;i++){
   stars.push({
@@ -172,13 +208,22 @@ for(let i=0;i<120;i++){
     size:Math.random()*2,
     depth:Math.random()*3,
     phase:Math.random()*Math.PI*2,
-    speed:0.02 + Math.random()*0.02
+    speed:0.02+Math.random()*0.02
   });
 }
 
 /* ☄️ кометы */
 let comets=[];
 let particles=[];
+
+/* 🧠 slow motion */
+let timeScale = 1;
+let slowTimer = 0;
+
+function triggerSlowMo(){
+  timeScale = 0.35;
+  slowTimer = 0.8; // секунды
+}
 
 function createComet(){
   comets.push({
@@ -193,15 +238,16 @@ function createComet(){
 
 /* 💥 взрыв */
 function explode(x,y){
-  for(let i=0;i<25;i++){
+  for(let i=0;i<60;i++){
     const a=Math.random()*Math.PI*2;
-    const s=Math.random()*2;
+    const s=Math.random()*3;
 
     particles.push({
       x,y,
       vx:Math.cos(a)*s,
       vy:Math.sin(a)*s,
-      life:1
+      life:1,
+      decay:0.015
     });
   }
 }
@@ -213,6 +259,7 @@ function handleClick(x,y){
     const d=Math.hypot(x-c.x,y-c.y);
 
     if(d<40){
+      triggerSlowMo();
       explode(c.x,c.y);
       comets.splice(i,1);
       openScene();
@@ -232,7 +279,7 @@ function openScene(){
   document.getElementById('fade').classList.add('active');
   setTimeout(()=>{
     document.getElementById('scene2').classList.add('active');
-  },400);
+  },500);
 }
 
 function closeScene(){
@@ -247,7 +294,7 @@ function startExperience(){
   document.getElementById('intro').classList.add('hidden');
 }
 
-/* управление */
+/* мышь */
 let mouse={x:0,y:0};
 window.addEventListener('mousemove',e=>{
   mouse.x=(e.clientX/w-0.5);
@@ -258,41 +305,38 @@ window.addEventListener('mousemove',e=>{
 function draw(){
   ctx.clearRect(0,0,w,h);
 
-  /* ⭐ звезды */
-  for(let i=0;i<stars.length;i++){
-    const s=stars[i];
+  /* slow-mo восстановление */
+  if(slowTimer > 0){
+    slowTimer -= 0.016;
+    if(slowTimer <= 0){
+      timeScale = 1;
+    }
+  }
 
-    s.phase += s.speed;
-    const twinkle = (Math.sin(s.phase)+1)/2;
+  /* звезды */
+  for(let s of stars){
+    s.phase+=s.speed*timeScale;
+    const tw=(Math.sin(s.phase)+1)/2;
 
-    const ox = mouse.x*s.depth*10;
-    const oy = mouse.y*s.depth*10;
-
-    ctx.globalAlpha = 0.3 + twinkle*0.7;
+    ctx.globalAlpha=0.3+tw*0.7;
 
     ctx.beginPath();
-    ctx.arc(s.x+ox,s.y+oy,s.size,0,Math.PI*2);
+    ctx.arc(s.x+mouse.x*s.depth*10,s.y+mouse.y*s.depth*10,s.size,0,Math.PI*2);
     ctx.fillStyle="white";
     ctx.fill();
   }
 
-  ctx.globalAlpha = 1;
+  ctx.globalAlpha=1;
 
-  /* ☄️ кометы */
+  /* кометы */
   for(let i=comets.length-1;i>=0;i--){
     const c=comets[i];
 
     ctx.beginPath();
     ctx.arc(c.x,c.y,c.size,0,Math.PI*2);
-    ctx.fillStyle="white";
     ctx.fill();
 
-    const g=ctx.createLinearGradient(
-      c.x,c.y,
-      c.x-c.vx*c.tail,
-      c.y-c.vy*c.tail
-    );
-
+    const g=ctx.createLinearGradient(c.x,c.y,c.x-c.vx*c.tail,c.y-c.vy*c.tail);
     g.addColorStop(0,"white");
     g.addColorStop(1,"transparent");
 
@@ -304,24 +348,29 @@ function draw(){
     ctx.lineTo(c.x-c.vx*c.tail,c.y-c.vy*c.tail);
     ctx.stroke();
 
-    c.x+=c.vx;
-    c.y+=c.vy;
+    c.x+=c.vx*timeScale;
+    c.y+=c.vy*timeScale;
 
     if(c.y>h+50) comets.splice(i,1);
   }
 
-  /* 💥 частицы */
+  /* частицы */
   for(let i=particles.length-1;i>=0;i--){
     const p=particles[i];
 
     ctx.globalAlpha=p.life;
+    ctx.shadowBlur=20;
+    ctx.shadowColor="white";
+
     ctx.beginPath();
     ctx.arc(p.x,p.y,2,0,Math.PI*2);
     ctx.fill();
 
-    p.x+=p.vx;
-    p.y+=p.vy;
-    p.life-=0.02;
+    ctx.shadowBlur=0;
+
+    p.x+=p.vx*timeScale;
+    p.y+=p.vy*timeScale;
+    p.life-=p.decay*timeScale;
 
     if(p.life<=0) particles.splice(i,1);
   }
@@ -332,7 +381,7 @@ function draw(){
 }
 draw();
 
-/* запуск комет */
+/* запуск */
 setInterval(()=>{
   if(Math.random()>0.5) createComet();
 },3000);
