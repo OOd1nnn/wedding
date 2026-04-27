@@ -49,11 +49,19 @@ h1 {
   font-size: 60px;
 }
 
-#countdown {
-  margin-top:10px;
-  font-size:18px;
-  opacity:0.8;
+/* таймер */
+#countdown,
+#countdown-hours,
+#countdown-minutes,
+#countdown-seconds {
+  margin-top: 5px;
+  opacity: 0.85;
 }
+
+#countdown { font-size: 22px; }
+#countdown-hours { font-size: 18px; }
+#countdown-minutes { font-size: 16px; }
+#countdown-seconds { font-size: 14px; }
 
 /* затемнение */
 .fade {
@@ -129,7 +137,12 @@ h1 {
     <div>
       <h1>Марта & Максим</h1>
       <p>17 июля 2027</p>
+
       <div id="countdown"></div>
+      <div id="countdown-hours"></div>
+      <div id="countdown-minutes"></div>
+      <div id="countdown-seconds"></div>
+
     </div>
   </div>
 
@@ -182,7 +195,7 @@ function resize(){
 resize();
 window.addEventListener('resize', resize);
 
-/* ⭐ 3D звезды */
+/* ⭐ звезды (3D) */
 let stars = [];
 for (let i = 0; i < 150; i++) {
   stars.push({
@@ -193,7 +206,7 @@ for (let i = 0; i < 150; i++) {
   });
 }
 
-/* 🎯 мышь / гироскоп */
+/* мышь */
 let mouse = { x: 0, y: 0 };
 
 window.addEventListener('mousemove', e => {
@@ -208,7 +221,7 @@ window.addEventListener('deviceorientation', e => {
   }
 });
 
-/* ☄️ кометы */
+/* кометы */
 let comets = [];
 let explosions = [];
 
@@ -226,7 +239,7 @@ function createComet(){
   });
 }
 
-/* 💥 взрыв */
+/* взрыв */
 function explode(x, y) {
   const particles = [];
 
@@ -246,7 +259,7 @@ function explode(x, y) {
   explosions.push({ particles });
 }
 
-/* 🎯 клик + тап */
+/* клик */
 function handleClick(x, y){
   comets.forEach(c=>{
     const dist = Math.hypot(x - c.x, y - c.y);
@@ -282,11 +295,11 @@ function closeScene(){
   },300);
 }
 
-/* 🎨 draw */
+/* draw */
 function draw(){
   ctx.clearRect(0,0,w,h);
 
-  // ⭐ звезды с параллаксом
+  // звезды
   stars.forEach(s=>{
     const ox = mouse.x * s.depth * 10;
     const oy = mouse.y * s.depth * 10;
@@ -297,7 +310,7 @@ function draw(){
     ctx.fill();
   });
 
-  // ☄️ кометы
+  // кометы
   comets.forEach((c,i)=>{
     ctx.shadowBlur = 20;
     ctx.shadowColor = "white";
@@ -332,7 +345,7 @@ function draw(){
     if(c.y > h+100) comets.splice(i,1);
   });
 
-  // 💥 взрывы
+  // взрывы
   explosions.forEach((exp, ei)=>{
     exp.particles.forEach((p, pi)=>{
       ctx.globalAlpha = p.life;
@@ -372,14 +385,28 @@ setInterval(()=>{
 },3000);
 
 /* ⏳ таймер */
-const el = document.getElementById('countdown');
-const date = new Date('2027-07-17');
+const elDays = document.getElementById('countdown');
+const elHours = document.getElementById('countdown-hours');
+const elMinutes = document.getElementById('countdown-minutes');
+const elSeconds = document.getElementById('countdown-seconds');
+
+const date = new Date('2027-07-17T00:00:00');
 
 function update(){
-  const diff = date - new Date();
-  const days = Math.floor(diff/1000/60/60/24);
-  el.innerHTML = days + " дней до свадьбы";
+  const now = new Date();
+  const diff = date - now;
+
+  const days = Math.floor(diff / (1000*60*60*24));
+  const hours = Math.floor(diff / (1000*60*60));
+  const minutes = Math.floor(diff / (1000*60));
+  const seconds = Math.floor(diff / 1000);
+
+  elDays.innerHTML = days + " дней";
+  elHours.innerHTML = hours + " часов";
+  elMinutes.innerHTML = minutes + " минут";
+  elSeconds.innerHTML = seconds + " секунд";
 }
+
 setInterval(update,1000);
 update();
 </script>
