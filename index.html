@@ -182,19 +182,34 @@ function resize(){
 resize();
 window.addEventListener('resize', resize);
 
-/* ⭐ звезды */
+/* ⭐ 3D звезды */
 let stars = [];
-for(let i=0;i<120;i++){
+for (let i = 0; i < 150; i++) {
   stars.push({
-    x:Math.random()*w,
-    y:Math.random()*h
+    x: Math.random() * w,
+    y: Math.random() * h,
+    size: Math.random() * 2,
+    depth: Math.random() * 3 + 1
   });
 }
 
+/* 🎯 мышь / гироскоп */
+let mouse = { x: 0, y: 0 };
+
+window.addEventListener('mousemove', e => {
+  mouse.x = (e.clientX / w - 0.5);
+  mouse.y = (e.clientY / h - 0.5);
+});
+
+window.addEventListener('deviceorientation', e => {
+  if (e.gamma && e.beta) {
+    mouse.x = e.gamma / 30;
+    mouse.y = e.beta / 30;
+  }
+});
+
 /* ☄️ кометы */
 let comets = [];
-
-/* 💥 взрывы */
 let explosions = [];
 
 function createComet(){
@@ -220,8 +235,7 @@ function explode(x, y) {
     const speed = 1 + Math.random() * 2;
 
     particles.push({
-      x: x,
-      y: y,
+      x, y,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
       life: 1,
@@ -232,7 +246,7 @@ function explode(x, y) {
   explosions.push({ particles });
 }
 
-/* 🎯 универсальный клик (мышь + тап) */
+/* 🎯 клик + тап */
 function handleClick(x, y){
   comets.forEach(c=>{
     const dist = Math.hypot(x - c.x, y - c.y);
@@ -249,14 +263,13 @@ window.addEventListener('click', e=>{
 });
 
 window.addEventListener('touchstart', e=>{
-  const touch = e.touches[0];
-  handleClick(touch.clientX, touch.clientY);
+  const t = e.touches[0];
+  handleClick(t.clientX, t.clientY);
 });
 
-/* 🎬 сцена */
+/* сцена */
 function openScene(){
   document.getElementById('fade').classList.add('active');
-
   setTimeout(()=>{
     document.getElementById('scene2').classList.add('active');
   },400);
@@ -264,7 +277,6 @@ function openScene(){
 
 function closeScene(){
   document.getElementById('scene2').classList.remove('active');
-
   setTimeout(()=>{
     document.getElementById('fade').classList.remove('active');
   },300);
@@ -274,27 +286,29 @@ function closeScene(){
 function draw(){
   ctx.clearRect(0,0,w,h);
 
-  // звезды
+  // ⭐ звезды с параллаксом
   stars.forEach(s=>{
-    ctx.fillStyle='white';
-    ctx.fillRect(s.x,s.y,1,1);
+    const ox = mouse.x * s.depth * 10;
+    const oy = mouse.y * s.depth * 10;
+
+    ctx.beginPath();
+    ctx.arc(s.x + ox, s.y + oy, s.size, 0, Math.PI*2);
+    ctx.fillStyle="white";
+    ctx.fill();
   });
 
-  // кометы
+  // ☄️ кометы
   comets.forEach((c,i)=>{
-
-    // glow
     ctx.shadowBlur = 20;
     ctx.shadowColor = "white";
 
     ctx.beginPath();
     ctx.arc(c.x, c.y, c.size, 0, Math.PI*2);
-    ctx.fillStyle = "white";
+    ctx.fillStyle="white";
     ctx.fill();
 
     ctx.shadowBlur = 0;
 
-    // хвост
     const grad = ctx.createLinearGradient(
       c.x, c.y,
       c.x - c.vx*c.tail,
@@ -309,10 +323,7 @@ function draw(){
 
     ctx.beginPath();
     ctx.moveTo(c.x, c.y);
-    ctx.lineTo(
-      c.x - c.vx*c.tail,
-      c.y - c.vy*c.tail
-    );
+    ctx.lineTo(c.x - c.vx*c.tail, c.y - c.vy*c.tail);
     ctx.stroke();
 
     c.x += c.vx;
@@ -324,7 +335,6 @@ function draw(){
   // 💥 взрывы
   explosions.forEach((exp, ei)=>{
     exp.particles.forEach((p, pi)=>{
-
       ctx.globalAlpha = p.life;
 
       ctx.beginPath();
