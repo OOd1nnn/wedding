@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Марта & Максим</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Inter&display=swap" rel="stylesheet">
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: #05050a;
+  color: white;
+}
+
+/* canvas */
+#canvas {
+  position: fixed;
+  top:0;
+  left:0;
+  z-index:0;
+}
+
+/* контент */
+.content {
+  position: relative;
+  z-index: 2;
+}
+
+.section {
+  height: 100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+}
+
+.block {
+  background: rgba(255,255,255,0.06);
+  padding: 40px;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+}
+
+h1 {
+  font-family: 'Playfair Display';
+  font-size: 60px;
+}
+
+#countdown {
+  margin-top:10px;
+  font-size:18px;
+  opacity:0.8;
+}
+
+/* затемнение */
+.fade {
+  position: fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:black;
+  opacity:0;
+  transition: 0.6s;
+  z-index:4;
+}
+
+.fade.active {
+  opacity:1;
+}
+
+/* новая сцена */
+.scene2 {
+  position: fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:#f3efe8;
+  color:#222;
+  z-index:6;
+  opacity:0;
+  pointer-events:none;
+  transition: 0.6s;
+  padding:40px 20px;
+}
+
+.scene2.active {
+  opacity:1;
+  pointer-events:auto;
+}
+
+.cards {
+  max-width:900px;
+  margin:auto;
+  display:flex;
+  flex-wrap:wrap;
+  gap:20px;
+  justify-content:center;
+}
+
+.card {
+  background:white;
+  padding:20px;
+  border-radius:20px;
+  width:280px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.1);
+}
+
+.back {
+  position:fixed;
+  top:20px;
+  left:20px;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="canvas"></canvas>
+<div class="fade" id="fade"></div>
+
+<div class="content">
+  <div class="section">
+    <div>
+      <h1>Марта & Максим</h1>
+      <p>17 июля 2027</p>
+      <div id="countdown"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="block">Всё началось с одного взгляда</div>
+  </div>
+
+  <div class="section">
+    <div class="block">Мы нашли друг друга</div>
+  </div>
+
+  <div class="section">
+    <div class="block">И хотим разделить этот день с вами</div>
+  </div>
+</div>
+
+<div class="scene2" id="scene2">
+  <div class="back" onclick="closeScene()">← назад</div>
+
+  <div class="cards">
+    <div class="card">
+      <h2>Wedding day</h2>
+      <p>17 / 07 / 2027</p>
+    </div>
+
+    <div class="card">
+      <h3>Программа</h3>
+      <p>15:30 сбор</p>
+      <p>16:00 церемония</p>
+      <p>18:30 банкет</p>
+    </div>
+
+    <div class="card">
+      <h3>Место</h3>
+      <p>Моринское агроусадьба</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let w,h;
+
+function resize(){
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+/* ⭐ звезды */
+let stars = [];
+for(let i=0;i<120;i++){
+  stars.push({
+    x:Math.random()*w,
+    y:Math.random()*h
+  });
+}
+
+/* ☄️ кометы */
+let comets = [];
+
+/* 💥 взрывы */
+let explosions = [];
+
+function createComet(){
+  const angle = Math.PI / 4;
+  const speed = 0.6;
+
+  comets.push({
+    x: Math.random()*w*0.7,
+    y: -50,
+    vx: Math.cos(angle)*speed,
+    vy: Math.sin(angle)*speed,
+    size: 2,
+    tail: 140
+  });
+}
+
+/* 💥 взрыв */
+function explode(x, y) {
+  const particles = [];
+
+  for (let i = 0; i < 30; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 1 + Math.random() * 2;
+
+    particles.push({
+      x: x,
+      y: y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 1,
+      size: 1 + Math.random() * 2
+    });
+  }
+
+  explosions.push({ particles });
+}
+
+/* 🎯 универсальный клик (мышь + тап) */
+function handleClick(x, y){
+  comets.forEach(c=>{
+    const dist = Math.hypot(x - c.x, y - c.y);
+
+    if(dist < 60){
+      explode(x, y);
+      openScene();
+    }
+  });
+}
+
+window.addEventListener('click', e=>{
+  handleClick(e.clientX, e.clientY);
+});
+
+window.addEventListener('touchstart', e=>{
+  const touch = e.touches[0];
+  handleClick(touch.clientX, touch.clientY);
+});
+
+/* 🎬 сцена */
+function openScene(){
+  document.getElementById('fade').classList.add('active');
+
+  setTimeout(()=>{
+    document.getElementById('scene2').classList.add('active');
+  },400);
+}
+
+function closeScene(){
+  document.getElementById('scene2').classList.remove('active');
+
+  setTimeout(()=>{
+    document.getElementById('fade').classList.remove('active');
+  },300);
+}
+
+/* 🎨 draw */
+function draw(){
+  ctx.clearRect(0,0,w,h);
+
+  // звезды
+  stars.forEach(s=>{
+    ctx.fillStyle='white';
+    ctx.fillRect(s.x,s.y,1,1);
+  });
+
+  // кометы
+  comets.forEach((c,i)=>{
+
+    // glow
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = "white";
+
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, c.size, 0, Math.PI*2);
+    ctx.fillStyle = "white";
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+
+    // хвост
+    const grad = ctx.createLinearGradient(
+      c.x, c.y,
+      c.x - c.vx*c.tail,
+      c.y - c.vy*c.tail
+    );
+
+    grad.addColorStop(0,"rgba(255,255,255,0.9)");
+    grad.addColorStop(1,"rgba(255,255,255,0)");
+
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.moveTo(c.x, c.y);
+    ctx.lineTo(
+      c.x - c.vx*c.tail,
+      c.y - c.vy*c.tail
+    );
+    ctx.stroke();
+
+    c.x += c.vx;
+    c.y += c.vy;
+
+    if(c.y > h+100) comets.splice(i,1);
+  });
+
+  // 💥 взрывы
+  explosions.forEach((exp, ei)=>{
+    exp.particles.forEach((p, pi)=>{
+
+      ctx.globalAlpha = p.life;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+      ctx.fillStyle="white";
+      ctx.fill();
+
+      p.x += p.vx;
+      p.y += p.vy;
+
+      p.vx *= 0.98;
+      p.vy *= 0.98;
+
+      p.life -= 0.03;
+
+      if(p.life <= 0){
+        exp.particles.splice(pi,1);
+      }
+    });
+
+    if(exp.particles.length === 0){
+      explosions.splice(ei,1);
+    }
+
+    ctx.globalAlpha = 1;
+  });
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+/* запуск */
+setInterval(()=>{
+  if(Math.random()>0.5) createComet();
+},3000);
+
+/* ⏳ таймер */
+const el = document.getElementById('countdown');
+const date = new Date('2027-07-17');
+
+function update(){
+  const diff = date - new Date();
+  const days = Math.floor(diff/1000/60/60/24);
+  el.innerHTML = days + " дней до свадьбы";
+}
+setInterval(update,1000);
+update();
+</script>
+
+</body>
+</html>
